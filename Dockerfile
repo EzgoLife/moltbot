@@ -16,6 +16,7 @@ RUN if [ -n "$OPENCLAW_DOCKER_APT_PACKAGES" ]; then \
       rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*; \
     fi
 
+# Copy package files + install deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 COPY ui/package.json ./ui/package.json
 COPY patches ./patches
@@ -23,17 +24,27 @@ COPY scripts ./scripts
 
 RUN pnpm install --frozen-lockfile
 
+# Copy source + build
 COPY . .
 RUN OPENCLAW_A2UI_SKIP_MISSING=1 pnpm build
-# Force pnpm for UI build (Bun may fail on ARM/Synology architectures)
 ENV OPENCLAW_PREFER_PNPM=1
 RUN pnpm ui:build
 
 ENV NODE_ENV=production
 
-# Security hardening: Run as non-root user
-# The node:22-bookworm image includes a 'node' user (uid 1000)
-# This reduces the attack surface by preventing container escape via root privileges
+# === YOUR CUSTOM CONFIG FIX (Prevents crashes) ===
+# Copy custom config template (public safe)
+COPY openclaw.json /app/openclaw.json
+# Create config dir + fix perms
+RUN mkdir -p /home/node/.openclaw && \
+    chown -R node:node /home/node/.openclaw
+# Custom entrypoint: inject env vars + fix locks
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+# Security: non-root user
 USER node
 
-CMD ["node", "dist/index.js"]
+# Use custom entrypoint
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["openclaw", "gateway", "start"]
