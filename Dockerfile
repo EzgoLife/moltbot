@@ -32,19 +32,20 @@ RUN pnpm ui:build
 
 ENV NODE_ENV=production
 
-# === YOUR CUSTOM CONFIG FIX (Prevents crashes) ===
-# Copy custom config template (public safe)
+# === CRASH FIX: Custom Config + Entrypoint ===
+# Copy config template (env vars injected at runtime)
 COPY openclaw.json /app/openclaw.json
-# Create config dir + fix perms
-RUN mkdir -p /home/node/.openclaw && \
-    chown -R node:node /home/node/.openclaw
-# Custom entrypoint: inject env vars + fix locks
+# Create config dirs (OpenClaw + legacy)
+RUN mkdir -p /home/node/.openclaw /home/node/.clawdbot && \
+    chown -R node:node /home/node/.openclaw /home/node/.clawdbot
+
+# Custom entrypoint (fixes EBUSY + injects Zeabur env vars)
 COPY entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
-# Security: non-root user
+# Non-root security
 USER node
 
-# Use custom entrypoint
+# Custom entrypoint + gateway
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["openclaw", "gateway", "start"]
+CMD ["node", "dist/index.js"]
