@@ -1,0 +1,39 @@
+{
+  "gateway": {
+    "mode": "local",
+    "controlUi": {"allowInsecureAuth": true},
+    "trustedProxies": ["0.0.0.0/0"]
+  },
+  "env": {
+    "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+    "MISTRAL_API_KEY": "${MISTRAL_API_KEY}",
+    "GROQ_API_KEY": "${GROQ_API_KEY}",
+    "HUGGINGFACE_API_KEY": "${HUGGINGFACE_API_KEY}"
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "google/gemini-2.5-flash",
+        "fallbacks": [
+          "google/gemini-2.5-flash-lite",
+          "mistral/mistral-large-latest",
+          "mistral/open-mistral-nemo",
+          "groq/llama-3.1-70b-versatile",
+          "huggingface/router"
+        ]
+      },
+      "maxConcurrent": 1
+    }
+  },
+  "channels": {},
+  "plugins": {
+    "entries": {
+      "whatsapp": {"enabled": true},
+      "slack": {"enabled": true},
+      "googlechat": {"enabled": true},
+      "signal": {"enabled": true}
+    }
+  },
+  "messages": {"ackReactionScope": "group-mentions"},
+  "commands": {"native": "auto", "nativeSkills": "auto"}
+}
